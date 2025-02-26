@@ -2,6 +2,9 @@ package Me.Teenaapje.Referral;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import Me.Teenaapje.Referral.Utils.Utils;
@@ -15,71 +18,110 @@ public class ReferralInvites {
 	ArrayList<Refer> referInvites;
 	// the core
 	ReferralCore core = ReferralCore.core;
-	
+
 	// init ReferralInvites
 	public ReferralInvites () {
 		referInvites = new ArrayList<Refer>();
 	}
-	
+
 	// add and send invite
 	public boolean AddToList(String to, String from) {
 		Player fromPlayer = core.GetPlayer(from);
-		
+
+		if (fromPlayer == null) {
+			// The referring player must be online
+			return false;
+		}
+
 		// check if already exists
 		if (IsInList(to, from)) {
 			Utils.SendMessage(fromPlayer, core.config.alreadySendRef);
 			return false;
 		}
-		
-		// check if it is the same player
-		Player toPlayer = core.GetPlayer(to);
-		if (fromPlayer == toPlayer) {
-			//refp.sendMessage(Utils.chatConsole(main.util.referSelf));
+
+		// Get UUID of the player being referred
+		UUID toPlayerUUID = core.GetPlayerUUID(to);
+
+		// If we couldn't find the player's UUID, they've never played on the server
+		if (toPlayerUUID == null) {
+			Utils.SendMessage(fromPlayer, "§cPlayer " + to + " has never played on this server or could not be found.");
+			return false;
+		}
+
+		// Check if it is the same player
+		if (fromPlayer.getUniqueId().equals(toPlayerUUID)) {
 			Utils.SendMessage(fromPlayer, core.config.alreadySendRef);
 			return false;
 		}
-		
-		// add to list
-		referInvites.add(new Refer(to, from));
-		
-		// get the buttons
-		TextComponent accept  = Utils.CreateTextComponent(core.config.accept, ChatColor.GREEN, true, ClickEvent.Action.RUN_COMMAND, "/ref accept " + from);
-		TextComponent decline = Utils.CreateTextComponent(core.config.decline,  ChatColor.RED, true, ClickEvent.Action.RUN_COMMAND, "/ref reject " + from);
-		
-		// send invite
-		Utils.SendMessage(toPlayer, core.config.youGotRefer, fromPlayer);
-		toPlayer.spigot().sendMessage(accept, decline);
-		
-		// notify that it has been sned
-		Utils.SendMessage(fromPlayer, core.config.youSendRequest, toPlayer);		
-		
+
+		// Add to list - store with UUID to ensure consistency
+		referInvites.add(new Refer(to, from, toPlayerUUID, fromPlayer.getUniqueId()));
+
+		// Get the player being referred (might be null if offline)
+		Player toPlayer = core.GetPlayer(to);
+
+		// If the player is online, send them the invitation immediately
+		if (toPlayer != null) {
+			// get the buttons
+			TextComponent accept = Utils.CreateTextComponent(core.config.accept, ChatColor.GREEN, true, ClickEvent.Action.RUN_COMMAND, "/ref accept " + from);
+			TextComponent decline = Utils.CreateTextComponent(core.config.decline, ChatColor.RED, true, ClickEvent.Action.RUN_COMMAND, "/ref reject " + from);
+
+			// send invite
+			Utils.SendMessage(toPlayer, core.config.youGotRefer, fromPlayer);
+			toPlayer.spigot().sendMessage(accept, decline);
+
+			// notify that it has been sent
+			Utils.SendMessage(fromPlayer, core.config.youSendRequest, toPlayer);
+		} else {
+			// Player is offline, notify the referring player
+			String playerName = core.GetPlayerName(toPlayerUUID);
+			if (playerName == null) playerName = to; // Fallback to the provided name if GetPlayerName returns null
+
+			Utils.SendMessage(fromPlayer, "§aYour referral invitation to §e" + playerName + "§a has been sent. They will receive it when they log in.");
+		}
+
 		return true;
 	}
-	
+
 	// remove from list
-	public boolean RemoveFromList (String ref, String refer) {
-		Iterator<Refer> itr = referInvites.iterator();  
-        while(itr.hasNext()){  
-        	Refer st=(Refer)itr.next();     
-            if (st.ref.contains(ref) && st.refer.contains(refer)) {
-            	itr.remove();
-            	return true;
-			}
-        }   
-        
-        return false;
-	}
-	
-	// is in list
-	public boolean IsInList (String ref,String refer) {
-	    Iterator<Refer> itr = referInvites.iterator();  
-        while(itr.hasNext()){  
-        	Refer st=(Refer)itr.next();              
-            if (st.ref.toLowerCase().compareTo(ref.toLowerCase()) == 0 && st.refer.toLowerCase().compareTo(refer.toLowerCase()) == 0) {
+	public boolean RemoveFromList(String ref, String refer) {
+		Iterator<Refer> itr = referInvites.iterator();
+		while(itr.hasNext()){
+			Refer st = (Refer)itr.next();
+			if (st.ref.contains(ref) && st.refer.contains(refer)) {
+				itr.remove();
 				return true;
 			}
-        }     
-        return false;
+		}
+
+		return false;
+	}
+
+	// is in list
+	public boolean IsInList(String ref, String refer) {
+		Iterator<Refer> itr = referInvites.iterator();
+		while(itr.hasNext()){
+			Refer st = (Refer)itr.next();
+			if (st.ref.toLowerCase().compareTo(ref.toLowerCase()) == 0 && st.refer.toLowerCase().compareTo(refer.toLowerCase()) == 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Get all pending invites for a player
+	public ArrayList<Refer> GetPendingInvites(String playerName) {
+		ArrayList<Refer> pendingInvites = new ArrayList<>();
+		Iterator<Refer> itr = referInvites.iterator();
+
+		while(itr.hasNext()) {
+			Refer invite = itr.next();
+			if (invite.ref.equalsIgnoreCase(playerName)) {
+				pendingInvites.add(invite);
+			}
+		}
+
+		return pendingInvites;
 	}
 }
 
@@ -87,9 +129,20 @@ public class ReferralInvites {
 class Refer {
 	String ref;
 	String refer;
-	
-	Refer (String _ref, String _refer) {
+	UUID refUUID;
+	UUID referUUID;
+
+	Refer(String _ref, String _refer) {
 		this.ref = _ref;
 		this.refer = _refer;
+		this.refUUID = null;
+		this.referUUID = null;
+	}
+
+	Refer(String _ref, String _refer, UUID _refUUID, UUID _referUUID) {
+		this.ref = _ref;
+		this.refer = _refer;
+		this.refUUID = _refUUID;
+		this.referUUID = _referUUID;
 	}
 }
