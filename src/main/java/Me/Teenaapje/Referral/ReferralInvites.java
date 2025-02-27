@@ -44,7 +44,7 @@ public class ReferralInvites {
 
 		// If we couldn't find the player's UUID, they've never played on the server
 		if (toPlayerUUID == null) {
-			Utils.SendMessage(fromPlayer, "§cPlayer " + to + " has never played on this server or could not be found.");
+			Utils.SendMessage(fromPlayer, core.config.playerNeverPlayed.replace("%player_name%", to));
 			return false;
 		}
 
@@ -77,7 +77,7 @@ public class ReferralInvites {
 			String playerName = core.GetPlayerName(toPlayerUUID);
 			if (playerName == null) playerName = to; // Fallback to the provided name if GetPlayerName returns null
 
-			Utils.SendMessage(fromPlayer, "§aYour referral invitation to §e" + playerName + "§a has been sent. They will receive it when they log in.");
+			Utils.SendMessage(fromPlayer, core.config.offlineReferralSent.replace("%player_name%", playerName));
 		}
 
 		return true;

@@ -156,3 +156,9 @@ referEachOther: "&cYou can't refer each other!"
 enableNotification: false
 #Only for Player that join the first time
 referNotification: "&6The referral system has a time limit, so make sure you use it."
+
+# Player has never played on this server
+playerNeverPlayed: "&cPlayer %player_name% has never played on this server or could not be found."
+
+# Offline player referral notification
+offlineReferralSent: "&aYour referral invitation to &e%player_name%&a has been sent. They will receive it when they log in."
