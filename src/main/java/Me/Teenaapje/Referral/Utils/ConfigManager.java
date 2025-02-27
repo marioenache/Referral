@@ -21,7 +21,8 @@ public class ConfigManager {
 			rejectSomeone, playerRej, 													// refReject
 			referSelf, referring, alreadyRefedSelf, referTimeOut, referMinPlay, maxIP,	// Refplayer
 			alreadySendRef, youGotRefer, youSendRequest, accept, decline, playerGotRej,	// StoredPlayerData
-			playerAcceptedRef, referNotification, playerNeverPlayed, offlineReferralSent;
+			playerAcceptedRef, referNotification, playerNeverPlayed, offlineReferralSent,
+			successfulOnlineReferral, referralError, referralProcessed;
 
 	public static boolean 	placeholderAPIEnabled, enableNotification, canReferEachOther, useReferralTimeLimit, useReferralMinPlay,
 			useSameIPLimit, usePlayerConfirm, useMileStoneRewards;
@@ -82,8 +83,15 @@ public class ConfigManager {
 		referNotification 	= config.getString("referNotification");
 
 		// New messages that were hardcoded
+
+		referralProcessed = config.getString("referralProcessed");
 		playerNeverPlayed   = config.getString("playerNeverPlayed");
 		offlineReferralSent = config.getString("offlineReferralSent");
+
+
+		// RefPlayer messages
+		successfulOnlineReferral = config.getString("successfulOnlineReferral");
+		referralError = config.getString("referralError");
 
 		// papi
 		placeholderAPIEnabled = core.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");

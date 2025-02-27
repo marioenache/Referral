@@ -160,5 +160,14 @@ referNotification: "&6The referral system has a time limit, so make sure you use
 # Player has never played on this server
 playerNeverPlayed: "&cPlayer %player_name% has never played on this server or could not be found."
 
-# Offline player referral notification
-offlineReferralSent: "&aYour referral invitation to &e%player_name%&a has been sent. They will receive it when they log in."
+# Offline player referral message (combined)
+offlineReferralSent: "&aYou have successfully referred &e%player_name%&a. They will receive their rewards when they log in."
+
+# Successful online referral message
+successfulOnlineReferral: "&aYou have successfully referred &e%player_name%&a!"
+
+# Error processing referral
+referralError: "&cAn error occurred while processing your referral."
+
+# Message shown to player when a pending referral is processed
+referralProcessed: "&aYou have been referred by &e%player_name%&a and received your rewards!"

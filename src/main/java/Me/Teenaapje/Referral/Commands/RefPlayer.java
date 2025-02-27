@@ -40,7 +40,7 @@ public class RefPlayer extends CommandBase {
 		// Get the target player's UUID
 		UUID targetUUID = core.GetPlayerUUID(args[0]);
 		if (targetUUID == null) {
-			Utils.SendMessage(player, "§cPlayer " + args[0] + " has never played on this server or could not be found.");
+			Utils.SendMessage(player, core.config.playerNeverPlayed.replace("%player_name%", args[0]));
 			return false;
 		}
 
@@ -111,7 +111,7 @@ public class RefPlayer extends CommandBase {
 				core.UseCommands(ConfigManager.playerReferd, player);
 
 				// Notify the player
-				Utils.SendMessage(player, "§aYou have successfully referred §e" + targetName + "§a. They will receive their rewards when they log in.");
+				Utils.SendMessage(player, core.config.offlineReferralSent.replace("%player_name%", targetName));
 
 				// Check for milestone rewards for the referring player
 				if (ConfigManager.useMileStoneRewards) {
@@ -128,7 +128,7 @@ public class RefPlayer extends CommandBase {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				Utils.SendMessage(player, "§cAn error occurred while processing your referral.");
+				Utils.SendMessage(player, core.config.referralError);
 				return false;
 			}
 		} else {
@@ -137,7 +137,7 @@ public class RefPlayer extends CommandBase {
 				core.db.ReferralPlayer(player, target);
 
 				Utils.SendMessage(target, core.config.referring);
-				Utils.SendMessage(player, "§aYou have successfully referred §e" + target.getName() + "§a!");
+				Utils.SendMessage(player, core.config.successfulOnlineReferral.replace("%player_name%", target.getName()));
 
 				// Give rewards to both players
 				core.UseCommands(ConfigManager.playerRefers, target);
@@ -169,7 +169,7 @@ public class RefPlayer extends CommandBase {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				Utils.SendMessage(player, "§cAn error occurred while processing your referral.");
+				Utils.SendMessage(player, core.config.referralError);
 				return false;
 			}
 		}

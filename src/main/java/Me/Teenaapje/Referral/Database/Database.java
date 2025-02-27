@@ -133,8 +133,9 @@ public class Database {
 				// Give rewards to the player
 				core.UseCommands(core.config.playerRefers, player);
 
-				// Notify the player
-				Utils.SendMessage(player, "§aYou have been referred by §e" + referredByName + "§a and received your rewards!");
+				// Notify the player - Using the config message instead of hardcoded message
+				String message = core.config.referralProcessed.replace("%player_name%", referredByName);
+				Utils.SendMessage(player, message);
 
 				// Log the action
 				Utils.Console("[Referral] Processed pending referral: " + referredByName + " referred " + player.getName());
