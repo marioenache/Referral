@@ -27,7 +27,6 @@ public class RefPlayer extends CommandBase {
 			return false;
 		} else if (args.length < 1) {
 			Utils.SendMessage(player, core.config.missingPlayer);
-
 			return false;
 		}
 
@@ -104,6 +103,10 @@ public class RefPlayer extends CommandBase {
 				String targetName = core.GetPlayerName(targetUUID);
 				if (targetName == null) targetName = args[0];
 
+				// Create players in database if they don't exist
+				core.db.CreatePlayer(player.getUniqueId().toString(), player.getName());
+				core.db.CreatePlayer(targetUUID.toString(), targetName);
+
 				// Store the referral in the database
 				core.db.StoreOfflineReferral(player.getUniqueId().toString(), player.getName(), targetUUID.toString(), targetName);
 
@@ -119,13 +122,21 @@ public class RefPlayer extends CommandBase {
 					String playerName = player.getName();
 
 					int playerLastReward = core.db.GetLastReward(playerUUID, playerName);
-					int playerReferrals = core.db.GetReferrals(playerUUID, playerName);
+					int playerReferrals = core.db.GetReferrals(playerUUID, playerName) + 1; // Add 1 to account for the new referral
+
+					// Update the last reward count in the database
+					core.db.LastRewardUpdate(player, playerReferrals);
 
 					// Check if player has a new milestone reward
 					if (core.milestone.HasAReward(playerLastReward, playerReferrals)) {
 						core.UseCommands(core.milestone.GetRewards(playerReferrals), player);
 					}
 				}
+
+				// Log the action for debugging
+				Utils.Console("[Referral] Player " + player.getName() + " referred offline player " + targetName);
+
+				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 				Utils.SendMessage(player, core.config.referralError);
@@ -134,6 +145,11 @@ public class RefPlayer extends CommandBase {
 		} else {
 			// Target is online, process normally
 			try {
+				// Create players in database if they don't exist
+				core.db.CreatePlayer(player.getUniqueId().toString(), player.getName());
+				core.db.CreatePlayer(target.getUniqueId().toString(), target.getName());
+
+				// Process the referral
 				core.db.ReferralPlayer(player, target);
 
 				Utils.SendMessage(target, core.config.referring);
@@ -152,7 +168,9 @@ public class RefPlayer extends CommandBase {
 					int targetLastReward = core.db.GetLastReward(targetPlayerUUID, targetPlayerName);
 					int targetReferrals = core.db.GetReferrals(targetPlayerUUID, targetPlayerName);
 
+					// Update the last reward count in the database for target
 					if (core.milestone.HasAReward(targetLastReward, targetReferrals)) {
+						core.db.LastRewardUpdate(target, targetReferrals);
 						core.UseCommands(core.milestone.GetRewards(targetReferrals), target);
 					}
 
@@ -163,17 +181,22 @@ public class RefPlayer extends CommandBase {
 					int playerLastReward = core.db.GetLastReward(playerUUID, playerName);
 					int playerReferrals = core.db.GetReferrals(playerUUID, playerName);
 
+					// Update the last reward count in the database for referrer
 					if (core.milestone.HasAReward(playerLastReward, playerReferrals)) {
+						core.db.LastRewardUpdate(player, playerReferrals);
 						core.UseCommands(core.milestone.GetRewards(playerReferrals), player);
 					}
 				}
+
+				// Log the action for debugging
+				Utils.Console("[Referral] Player " + player.getName() + " referred online player " + target.getName());
+
+				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 				Utils.SendMessage(player, core.config.referralError);
 				return false;
 			}
 		}
-
-		return true;
 	}
 }
